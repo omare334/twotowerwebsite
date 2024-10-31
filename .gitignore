@@ -1,0 +1,4 @@
+# Ignore Python pickle, PyTorch model, and checkpoint files
+*.pkl
+*.pt
+*.pth
