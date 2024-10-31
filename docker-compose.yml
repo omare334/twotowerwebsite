@@ -1,0 +1,35 @@
+
+version: '3.8'  # Optional: Specify the version
+
+services:
+  postgres:
+    image: postgres:latest  # Specify the PostgreSQL image
+    container_name: postgres  # Name of the PostgreSQL container
+    environment:
+      POSTGRES_USER: omarewis  # Set your PostgreSQL username
+      POSTGRES_PASSWORD: ommaha260801  # Set your PostgreSQL password
+      POSTGRES_DB: passages  # Set your PostgreSQL database name
+    networks:
+      - streamlit-network 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # For persistent data storage
+      - ./init:/docker-entrypoint-initdb.d  # Mount the init script directory
+
+  streamlit:
+    image: my-streamlit-app  # Replace with your actual Streamlit image
+    container_name: omar_app  
+    ports:
+      - "8501:8501"  
+    networks:
+      - streamlit-network  
+    depends_on:
+      - postgres  
+
+networks:
+  streamlit-network:
+    external: true  
+
+volumes:
+  postgres_data:  # Volume for PostgreSQL data
+
+
