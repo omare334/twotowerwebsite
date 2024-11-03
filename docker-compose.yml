@@ -1,35 +1,72 @@
-
-version: '3.8'  # Optional: Specify the version
+version: '3.8'  # Specify the version of the Docker Compose file format
 
 services:
   postgres:
-    image: postgres:latest  # Specify the PostgreSQL image
-    container_name: postgres  # Name of the PostgreSQL container
+    image: postgres:latest
+    container_name: postgres
     environment:
-      POSTGRES_USER: omarewis  # Set your PostgreSQL username
-      POSTGRES_PASSWORD: ommaha260801  # Set your PostgreSQL password
-      POSTGRES_DB: passages  # Set your PostgreSQL database name
+      POSTGRES_USER: omareweis
+      POSTGRES_PASSWORD: ommaha260801
+      POSTGRES_DB: passages
     networks:
-      - streamlit-network 
+      - streamlit-network
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # For persistent data storage
-      - ./init:/docker-entrypoint-initdb.d  # Mount the init script directory
+      - ./postgres_data:/var/lib/postgresql/data  # Persistent data storage
+      - ./init:/docker-entrypoint-initdb.d  # Initialization scripts for the database
+    ports:
+      - "5432:5432"
 
   streamlit:
-    image: my-streamlit-app  # Replace with your actual Streamlit image
-    container_name: omar_app  
+    build:
+      context: .  # Build from the current directory
+      dockerfile: Dockerfile  # Use the Dockerfile in the current directory
+    image: my-streamlit-app
+    container_name: omar_app
     ports:
-      - "8501:8501"  
+      - "8501:8501"
     networks:
-      - streamlit-network  
+      - streamlit-network
     depends_on:
-      - postgres  
+      - postgres
+      - minio
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: omareweis
+      MINIO_ROOT_PASSWORD: ommaha260801
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    entrypoint: /init/entrypoint.sh  # Custom entrypoint script if needed
+    ports:
+      - "9000:9000"  # MinIO main API port
+      - "9001:9001"  # MinIO console port
+    networks:
+      - streamlit-network
+    volumes:
+      - ./minio_data:/data  # Persistent storage for MinIO
+      - ./init:/init  # Initialization scripts if needed
+      - ./models:/models  # Directory for storing models
+    restart: always
+    environment:
+      MINIO_ROOT_USER: omareweis
+      MINIO_ROOT_PASSWORD: ommaha260801
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"  # Access pgAdmin via this port
+    networks:
+      - streamlit-network
+    depends_on:
+      - postgres  # Wait for PostgreSQL to start
+    restart: always
 
 networks:
   streamlit-network:
-    external: true  
-
-volumes:
-  postgres_data:  # Volume for PostgreSQL data
-
-
+    external: true  # Use an existing external network
+    driver: bridge  # Use the bridge network driver
